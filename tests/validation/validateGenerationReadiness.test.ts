@@ -20,7 +20,7 @@ describe('validateGenerationReadiness', () => {
   it('is not ready when safety confirmation is incomplete', () => {
     const result = validateGenerationReadiness(validParameters, { safetyCheckCompleted: false })
     expect(result.ready).toBe(false)
-    expect(result.valid).toBe(false)
+    expect(result.valid).toBe(true)
     expect(result.errors).toContainEqual({
       field: 'safetyCheckCompleted',
       code: 'safety-check-incomplete',
@@ -28,24 +28,46 @@ describe('validateGenerationReadiness', () => {
     })
   })
 
-  it('is ready only when parameters and safety confirmation are valid', () => {
+  it('remains not ready even when parameters and safety confirmation are valid', () => {
     expect(validateGenerationReadiness(validParameters, { safetyCheckCompleted: true })).toEqual({
-      ready: true,
       valid: true,
+      ready: false,
       errors: [],
     })
   })
 
-  it('returns parameter and safety errors together', () => {
+  it('returns parameter errors and remains not ready', () => {
     const result = validateGenerationReadiness(
       { ...validParameters, width: 0, safeZ: 2, retractZ: 3 },
-      { safetyCheckCompleted: false },
+      { safetyCheckCompleted: true },
     )
     expect(result.ready).toBe(false)
+    expect(result.valid).toBe(false)
     expect(result.errors.map(({ field }) => field)).toEqual([
       'width',
       'safeZ',
-      'safetyCheckCompleted',
     ])
+  })
+
+  it('returns parameter and safety errors together while remaining not ready', () => {
+    const result = validateGenerationReadiness(
+      { ...validParameters, width: 0 },
+      { safetyCheckCompleted: false },
+    )
+    expect(result.valid).toBe(false)
+    expect(result.ready).toBe(false)
+    expect(result.errors.map(({ field }) => field)).toEqual(['width', 'safetyCheckCompleted'])
+  })
+
+  it('does not mutate parameters or safety context', () => {
+    const parameters = { ...validParameters }
+    const safetyContext = { safetyCheckCompleted: false }
+    const parametersBefore = { ...parameters }
+    const safetyContextBefore = { ...safetyContext }
+
+    validateGenerationReadiness(parameters, safetyContext)
+
+    expect(parameters).toEqual(parametersBefore)
+    expect(safetyContext).toEqual(safetyContextBefore)
   })
 })

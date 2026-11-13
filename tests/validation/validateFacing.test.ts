@@ -35,6 +35,20 @@ describe('validateFacing', () => {
     ])
   })
 
+  it('does not compare stepover with a nonpositive tool diameter', () => {
+    const result = validateFacing({ ...validParameters, toolDiameter: 0, stepover: 5 })
+    expect(result.errors.map(({ code }) => code)).toEqual(['must-be-positive'])
+    expect(result.errors[0]?.field).toBe('toolDiameter')
+  })
+
+  it('does not compare heights when either height is nonpositive', () => {
+    const safeZResult = validateFacing({ ...validParameters, safeZ: 0, retractZ: 5 })
+    const retractZResult = validateFacing({ ...validParameters, safeZ: 5, retractZ: 0 })
+
+    expect(safeZResult.errors.map(({ code }) => code)).toEqual(['must-be-positive'])
+    expect(retractZResult.errors.map(({ code }) => code)).toEqual(['must-be-positive'])
+  })
+
   it('reports nonfinite values without derived duplicate errors', () => {
     const result = validateFacing({
       ...validParameters,
@@ -53,4 +67,39 @@ describe('validateFacing', () => {
     validateFacing(input)
     expect(input).toEqual(before)
   })
+
+it('accepts stepover equal to tool diameter', () => {
+  const result = validateFacing({
+    ...validParameters,
+    stepover: validParameters.toolDiameter,
+  })
+
+  expect(result.valid).toBe(true)
+})
+
+it('accepts safeZ equal to retractZ', () => {
+  const result = validateFacing({
+    ...validParameters,
+    safeZ: validParameters.retractZ,
+  })
+
+  expect(result.valid).toBe(true)
+})
+
+it('rejects zero and negative stepover', () => {
+  for (const stepover of [0, -1]) {
+    const result = validateFacing({
+      ...validParameters,
+      stepover,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContainEqual({
+      field: 'stepover',
+      code: 'must-be-positive',
+      message: 'stepover must be greater than zero.',
+    })
+  }
+})
+
 })

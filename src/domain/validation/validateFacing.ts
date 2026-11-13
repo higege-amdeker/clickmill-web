@@ -1,5 +1,9 @@
 import type { FacingParameters } from '../models/FacingParameters'
-import type { ValidationError, ValidationResult } from '../models/ValidationResult'
+import type {
+  ValidationError,
+  ValidationErrorCode,
+  ValidationResult,
+} from '../models/ValidationResult'
 
 const numericFields: readonly (keyof FacingParameters)[] = [
   'width',
@@ -21,12 +25,14 @@ const positiveFields: readonly (keyof FacingParameters)[] = [
   'toolDiameter',
   'depth',
   'stepdown',
+  'safeZ',
+  'retractZ',
   'feedXY',
   'feedZ',
   'spindleRPM',
 ]
 
-const error = (field: string, code: string, message: string): ValidationError => ({
+const error = (field: string, code: ValidationErrorCode, message: string): ValidationError => ({
   field,
   code,
   message,
@@ -49,7 +55,11 @@ export function validateFacing(parameters: FacingParameters): ValidationResult {
     }
   }
 
-  if (!nonFinite.has('stepover') && !nonFinite.has('toolDiameter')) {
+  if (
+    !nonFinite.has('stepover') &&
+    !nonFinite.has('toolDiameter') &&
+    parameters.toolDiameter > 0
+  ) {
     if (parameters.stepover <= 0) {
       errors.push(error('stepover', 'must-be-positive', 'stepover must be greater than zero.'))
     } else if (parameters.stepover > parameters.toolDiameter) {
@@ -57,13 +67,12 @@ export function validateFacing(parameters: FacingParameters): ValidationResult {
     }
   }
 
-  if (!nonFinite.has('safeZ') && !nonFinite.has('retractZ')) {
-    if (parameters.retractZ <= 0) {
-      errors.push(error('retractZ', 'must-be-positive', 'retractZ must be greater than zero.'))
-    }
-    if (parameters.safeZ <= 0) {
-      errors.push(error('safeZ', 'must-be-positive', 'safeZ must be greater than zero.'))
-    }
+  if (
+    !nonFinite.has('safeZ') &&
+    !nonFinite.has('retractZ') &&
+    parameters.safeZ > 0 &&
+    parameters.retractZ > 0
+  ) {
     if (parameters.safeZ < parameters.retractZ) {
       errors.push(error('safeZ', 'below-retract-height', 'safeZ must be greater than or equal to retractZ.'))
     }

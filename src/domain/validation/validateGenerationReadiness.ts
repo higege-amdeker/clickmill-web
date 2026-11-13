@@ -23,8 +23,8 @@ export function validateGenerationReadiness(
   }
 
   return {
-    valid: errors.length === 0,
-    ready: errors.length === 0,
+    valid: parameterResult.valid,
+    ready: false,
     errors,
   }
 }

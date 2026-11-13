@@ -1,6 +1,13 @@
+export type ValidationErrorCode =
+  | 'not-finite'
+  | 'must-be-positive'
+  | 'exceeds-tool-diameter'
+  | 'below-retract-height'
+  | 'safety-check-incomplete'
+
 export interface ValidationError {
   field: string
-  code: string
+  code: ValidationErrorCode
   message: string
 }
 
